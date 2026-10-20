@@ -1,0 +1,1118 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================
+   GLOBAL TYPOGRAPHY & BASE STYLES
+   ========================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-style: normal !important;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+  color: #0f172a;
+  font-style: normal !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  font-style: normal !important;
+}
+
+button, input, textarea, select {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  font-style: normal !important;
+}
+
+/* 1. GLOBAL RESET & TYPOGRAPHY */
+html, body {
+  height: 100vh;
+  width: 100vw;
+  background-color: #f8fafc;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+/* 2. LAYOUT STRUCTURE */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* 3. PREMIUM HEADINGS (OUTFIT FONT) */
+h1, h2, h3, .control-title {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 700 !important;
+  font-style: normal !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.2;
+}
+
+/* 4. BODY TEXT (PLUS JAKARTA SANS) */
+p, span, label, .sidebar-item {
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-weight: 500;
+  letter-spacing: 0.01em !important;
+  font-size: 0.875rem;
+  font-style: normal !important;
+}
+
+/* 4. GOOGLE CLASSROOM CARD STYLING */
+.course-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  height: 18rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.dark .course-card {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+.course-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  padding: 1.25rem;
+  height: 7rem;
+  color: white;
+  position: relative;
+}
+
+.card-title {
+  font-size: 1.1rem;
+  margin-bottom: 2px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.card-subtitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* CIRCLE AVATAR (Uppercase Initials) */
+.card-avatar {
+  position: absolute;
+  bottom: -1.5rem;
+  right: 1.25rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 9999px;
+  border: 4px solid white;
+  background-color: #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.dark .card-avatar {
+  border-color: #0f172a;
+}
+
+.card-body {
+  flex: 1;
+  padding: 2rem 1rem 1rem 1rem;
+  background-color: white;
+  color: #64748b; /* Slate 500 para sa assignments */
+  font-size: 0.75rem;
+}
+
+.dark .card-body {
+  background-color: #0f172a;
+  color: #cbd5e1;
+}
+
+.card-footer {
+  border-top: 1px solid #f1f5f9;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  color: #94a3b8;
+}
+
+.dark .card-footer {
+  border-top-color: #1e293b;
+  color: #64748b;
+}
+
+/* 5. SIDEBAR PREMIUM TYPOGRAPHY */
+
+/* Section Labels (e.g., ACTIVE COURSES) */
+.sidebar-section-label, 
+.sidebar-section-heading {
+  font-family: 'Syne', sans-serif !important;
+  font-weight: 800 !important;
+  font-style: italic;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.05em !important;
+  color: #64748b; /* Slate 400 */
+  margin-bottom: 0.5rem;
+}
+
+/* Sidebar Links (Home, Calendar, Courses) */
+.sidebar-link-text,
+.nav-item span,
+.sidebar-item span {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.12em !important; /* Luxury spacing */
+  font-size: 0.75rem !important;
+}
+
+/* System Settings (Active Bottom Item) */
+.sidebar-settings-active {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase;
+}
+
+/* Icons and Text Alignment */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  transition: all 0.2s ease;
+}
+
+.sidebar-item:hover {
+  background-color: rgba(241, 245, 249, 0.1); /* Subtle hover for dark mode */
+}
+
+/* Original sidebar item for backward compatibility */
+.sidebar-item {
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  transition: all 0.2s;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0 9999px 9999px 0;
+}
+
+/* 6. MODERN SCROLLBAR */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+/* 7. DARK MODE CONTAINER FIXES */
+.dark body, 
+.dark .app-container,
+.dark .main-content {
+  background-color: #000000 !important; /* Siguraduhing pareho sa dashboard background */
+}
+
+.dark .control-center-card,
+.dark .notifications-wrapper,
+.dark .settings-box,
+.dark section {
+  background-color: #000000 !important; /* Pantay sa background */
+  border: 1px solid #1a1a1a !important; /* Halos hindi na kita na border */
+  box-shadow: none !important;
+}
+
+/* Auth Card Text Contrast Override */
+.dark .auth-card h2,
+.dark .auth-card p,
+.dark .auth-card span,
+.dark .auth-card label {
+  color: inherit !important;
+}
+
+.dark .text-emerald-500 {
+  color: #10b981 !important;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+.dark .notification-tab, 
+.dark .control-center-card,
+.dark .settings-container {
+  background-color: #000000 !important; /* Slate 900 */
+  border-color: #1a1a1a !important;    /* Slate 800 */
+  color: #ffffff !important;           /* Slate 100 */
+}
+
+/* Para sa Toggle Switches sa Dark Mode */
+.dark input:checked + .toggle-bg {
+  background-color: #3b82f6; /* Manatiling blue pag active */
+}
+
+.dark .toggle-bg {
+  background-color: #334155; /* Darker slate pag inactive */
+}
+
+/* ALL-IN-ONE HIGH-CONTRAST FIX FOR LOGIN PAGE */
+.login-card-forced-dark {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  transition: all 0.3s ease !important;
+}
+
+.login-card-forced-dark h1,
+.login-card-forced-dark h2,
+.login-card-forced-dark h3,
+.login-card-forced-dark p,
+.login-card-forced-dark span,
+.login-card-forced-dark label,
+.login-card-forced-dark div {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+/* Inactive Buttons in Light Mode */
+.login-card-forced-dark button:not(.bg-blue-600):not(.bg-blue-700) {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+  font-weight: 700 !important;
+}
+
+/* Form Inputs in Light Mode */
+.login-card-forced-dark input {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.login-card-forced-dark input::placeholder {
+  color: #64748b !important;
+}
+
+/* ==========================================
+   DYNAMIC DARK MODE STYLES (.dark active)
+   ========================================== */
+.dark .login-card-forced-dark,
+html.dark .login-card-forced-dark,
+body.dark .login-card-forced-dark {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  border: 1px solid #1e293b !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 30px rgba(59, 130, 246, 0.15) !important;
+}
+
+.dark .login-card-forced-dark h1,
+.dark .login-card-forced-dark h2,
+.dark .login-card-forced-dark h3,
+.dark .login-card-forced-dark p,
+.dark .login-card-forced-dark span,
+.dark .login-card-forced-dark label,
+.dark .login-card-forced-dark div,
+html.dark .login-card-forced-dark h1,
+html.dark .login-card-forced-dark h2,
+html.dark .login-card-forced-dark p,
+html.dark .login-card-forced-dark span {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Subtitles in Dark Mode (Soft White) */
+.dark .login-card-forced-dark p,
+html.dark .login-card-forced-dark p {
+  color: #cbd5e1 !important;
+}
+
+/* Inactive Buttons in Dark Mode */
+.dark .login-card-forced-dark button:not(.bg-blue-600):not(.bg-blue-700),
+html.dark .login-card-forced-dark button:not(.bg-blue-600):not(.bg-blue-700) {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+  font-weight: 700 !important;
+}
+
+/* Form Inputs in Dark Mode */
+.dark .login-card-forced-dark input,
+html.dark .login-card-forced-dark input {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+  border: 1px solid #334155 !important;
+}
+
+.dark .login-card-forced-dark input::placeholder,
+html.dark .login-card-forced-dark input::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Footer Link / Register Link in Dark Mode */
+.dark .login-card-forced-dark .text-blue-600,
+.dark .login-card-forced-dark a,
+.dark .login-card-forced-dark span.cursor-pointer,
+html.dark .login-card-forced-dark .text-blue-600 {
+  color: #60a5fa !important;
+  font-weight: 800 !important;
+  text-decoration: underline !important;
+}
+
+/* ==========================================
+   TOPBAR & SIDEBAR LIGHT MODE (DEFAULT)
+   ========================================== */
+.sidebar-forced-dynamic,
+.topbar-forced-dynamic {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: none !important;
+}
+
+.sidebar-forced-dynamic *,
+.topbar-forced-dynamic * {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+/* Search Input in Light Mode */
+.topbar-forced-dynamic input {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+/* ==========================================
+   TOPBAR & SIDEBAR DARK MODE (WHEN DARK IS ACTIVE)
+   ========================================== */
+.dark .sidebar-forced-dynamic,
+.dark .topbar-forced-dynamic,
+html.dark .sidebar-forced-dynamic,
+html.dark .topbar-forced-dynamic,
+body.dark .sidebar-forced-dynamic,
+body.dark .topbar-forced-dynamic {
+  background-color: #0f172a !important; /* Solid Dark Slate */
+  color: #ffffff !important;
+  border-color: #1e293b !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+}
+
+/* Force All Text inside Sidebar & Topbar to Pure White in Dark Mode */
+.dark .sidebar-forced-dynamic *,
+.dark .topbar-forced-dynamic *,
+html.dark .sidebar-forced-dynamic *,
+html.dark .topbar-forced-dynamic * {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Muted Subtitles in Dark Mode (BSIT 3-A, etc) */
+.dark .sidebar-forced-dynamic span[class*="text-xs"],
+.dark .sidebar-forced-dynamic p[class*="text-xs"],
+html.dark .sidebar-forced-dynamic span[class*="text-xs"] {
+  color: #94a3b8 !important;
+}
+
+/* Search Bar Input in Dark Mode */
+.dark .topbar-forced-dynamic input,
+html.dark .topbar-forced-dynamic input {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+  border: 1px solid #334155 !important;
+}
+
+.dark .topbar-forced-dynamic input::placeholder,
+html.dark .topbar-forced-dynamic input::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Active Nav Link Highlight in Dark Mode */
+.dark .sidebar-forced-dynamic .bg-white\/20,
+html.dark .sidebar-forced-dynamic [class*="bg-"] {
+  background-color: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+/* Sign Out Button in Dark Mode */
+.dark .sidebar-forced-dynamic button:last-child,
+html.dark .sidebar-forced-dynamic button:last-child {
+  background-color: #ff69b4 !important;
+  border: 1px solid #ff69b4 !important;
+}
+
+.dark .sidebar-forced-dynamic button:last-child *,
+html.dark .sidebar-forced-dynamic button:last-child * {
+  color: #ffffff !important;
+}
+
+/* ==========================================
+   GLOBAL COMMON-SENSE LIGHT MODE (BLACK TEXT)
+   ========================================== */
+body, html, #root {
+  color: #0f172a !important;
+}
+
+:not(.dark) h1, :not(.dark) h2, :not(.dark) h3, :not(.dark) h4,
+:not(.dark) p, :not(.dark) span, :not(.dark) label, :not(.dark) td, 
+:not(.dark) th, :not(.dark) a, :not(.dark) div:not([class*="bg-blue"]):not([class*="bg-purple"]) {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+/* ==========================================
+   GLOBAL COMMON-SENSE DARK MODE (WHITE TEXT)
+   ========================================== */
+.dark, html.dark, body.dark {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6,
+.dark p, .dark span, .dark label, .dark td, .dark th, .dark a,
+.dark div, .dark button:not(.bg-blue-600):not(.bg-purple-600),
+html.dark h1, html.dark h2, html.dark h3, html.dark p, html.dark span,
+html.dark label, html.dark td, html.dark th, html.dark a {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Soft gray for subtitles in dark mode */
+.dark .text-slate-400, .dark .text-gray-400, .dark .text-slate-500,
+html.dark .text-slate-400, html.dark .text-gray-400 {
+  color: #cbd5e1 !important;
+}
+
+/* Input Fields in Dark Mode */
+.dark input, .dark textarea, .dark select,
+html.dark input, html.dark textarea, html.dark select {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+.dark input::placeholder, html.dark input::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* ==========================================
+   FORCE NO MORE GRAY BACKGROUNDS IN DARK MODE
+   ========================================== */
+.dark aside,
+.dark header,
+.dark nav,
+.dark [class*="sidebar"],
+.dark [class*="topbar"],
+.dark [class*="notification"] {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  border-color: #1e293b !important;
+}
+
+.dark aside *,
+.dark header *,
+.dark nav *,
+.dark [class*="notification"] * {
+  color: #ffffff !important;
+}
+
+.dark aside .text-xs,
+.dark header .text-xs {
+  color: #cbd5e1 !important;
+}
+
+/* ==========================================
+   AI ASSISTANT DARK MODE FORCE FIX
+   ========================================== */
+.dark [class*="ai-assistant"],
+.dark [class*="chatbot"],
+.dark [class*="chat-modal"] {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+/* Chat Message Bubbles */
+.dark [class*="chat-message"],
+.dark [class*="bot-reply"],
+.dark [class*="ai-bubble"] {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+  border: 1px solid #334155 !important;
+}
+
+/* Quick Action Chips */
+.dark [class*="quick-action"],
+.dark [class*="suggestion-chip"] {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #334155 !important;
+}
+
+.dark [class*="quick-action"]:hover {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================
+   STREAM DARK MODE FORCE FIX
+   ========================================== */
+.dark [class*="stream"],
+.dark [class*="stream-container"] {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+.dark [class*="stream"] *,
+.dark [class*="stream-container"] * {
+  color: #ffffff !important;
+}
+
+.dark [class*="stream"] .text-xs,
+.dark [class*="stream-container"] .text-xs {
+  color: #cbd5e1 !important;
+}
+
+/* ==========================================
+   GLOBAL DARK MODE UTILITY OVERRIDES
+   ========================================== */
+.dark .dark-card-override {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+  box-shadow: none !important;
+}
+
+.dark .dark-text-primary {
+  color: #ffffff !important;
+}
+
+.dark .dark-text-secondary {
+  color: #cbd5e1 !important;
+}
+
+.dark .dark-input-override {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+/* ==========================================
+   BRUTE-FORCE COURSE STREAM CARD OVERRIDE
+   ========================================== */
+.dark .course-stream-card,
+.dark [class*="card"] {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark .course-stream-card *,
+.dark [class*="card"] * {
+  color: #ffffff !important;
+}
+
+.dark .course-stream-card .due-date,
+.dark .course-stream-card .text-muted {
+  color: #cbd5e1 !important;
+}
+
+/* ==========================================
+   FORCE ALL INLINE STYLES TO DARK MODE COLORS
+   ========================================== */
+.dark [style*="color: var(--color-primary)"],
+.dark [style*="color:var(--color-primary)"] {
+  color: #ffffff !important;
+}
+
+.dark [style*="color: var(--color-secondary)"],
+.dark [style*="color:var(--color-secondary)"] {
+  color: #e2e8f0 !important;
+}
+
+.dark [style*="color: var(--color-muted)"],
+.dark [style*="color:var(--color-muted)"] {
+  color: #cbd5e1 !important;
+}
+
+/* Force all text elements to be visible in dark mode */
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6,
+.dark p, .dark span, .dark div, .dark label, .dark td, .dark th,
+.dark button, .dark a, .dark li {
+  color: #ffffff !important;
+}
+
+/* Allow specific muted text colors */
+.dark .text-slate-400, .dark .text-slate-500,
+.dark .text-gray-400, .dark .text-gray-500 {
+  color: #cbd5e1 !important;
+}
+
+/* ==========================================
+   FORCE CSS VARIABLES TO DARK MODE VALUES
+   ========================================== */
+.dark, html.dark, body.dark {
+  --bg-main: #0f172a !important;
+  --bg-secondary: #1e293b !important;
+  --bg-tertiary: #334155 !important;
+  --card-bg: #1e293b !important;
+  --sidebar-bg: #0f172a !important;
+  --color-primary: #ffffff !important;
+  --color-secondary: #e2e8f0 !important;
+  --color-muted: #cbd5e1 !important;
+  --border-light: #475569 !important;
+  --border-dark: #64748b !important;
+}
+
+/* Also target .dark-mode class for compatibility */
+.dark-mode, html.dark-mode, body.dark-mode {
+  --bg-main: #0f172a !important;
+  --bg-secondary: #1e293b !important;
+  --bg-tertiary: #334155 !important;
+  --card-bg: #1e293b !important;
+  --sidebar-bg: #0f172a !important;
+  --color-primary: #ffffff !important;
+  --color-secondary: #e2e8f0 !important;
+  --color-muted: #cbd5e1 !important;
+  --border-light: #475569 !important;
+  --border-dark: #64748b !important;
+}
+
+/* ==========================================
+   GLOBAL STYLESHEET SAFEGUARD FOR SUBJECT STREAM
+   ========================================== */
+.dark [class*="card"],
+.dark [class*="stream"] {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark [class*="task-item"],
+.dark [class*="due-date"] {
+  background-color: #0f172a !important;
+  color: #cbd5e1 !important;
+}
+
+/* ==========================================
+   ADDITIONAL DARK MODE SAFEGUARD
+   ========================================== */
+.dark .bg-white,
+.dark div[class*="card"],
+.dark div[class*="Stream"] {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark div[class*="task"],
+.dark div[class*="due"] {
+  background-color: #0f172a !important;
+}
+
+.dark h1, .dark h2, .dark h3, .dark h4, .dark p, .dark span {
+  color: #ffffff !important;
+}
+
+.dark .text-slate-500, .dark .text-slate-400 {
+  color: #cbd5e1 !important;
+}
+
+/* ==========================================
+   UPCOMING TASKS INNER CARDS DARK MODE OVERRIDE
+   ========================================== */
+.dark [class*="UpcomingTasks"] div,
+.dark [class*="task-item"],
+.dark [class*="taskCard"] {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+.dark [class*="UpcomingTasks"] h4,
+.dark [class*="UpcomingTasks"] p,
+.dark [class*="task-item"] *,
+.dark [class*="taskCard"] * {
+  color: #e2e8f0 !important;
+}
+
+.dark [class*="UpcomingTasks"] span {
+  color: #cbd5e1 !important;
+}
+
+/* ==========================================
+   FORCE CSS VARIABLES TO DARK MODE VALUES
+   ========================================== */
+.dark, html.dark, body.dark {
+  --bg-main: #0f172a !important;
+  --bg-secondary: #1e293b !important;
+  --bg-tertiary: #334155 !important;
+  --card-bg: #1e293b !important;
+  --sidebar-bg: #0f172a !important;
+  --color-primary: #ffffff !important;
+  --color-secondary: #e2e8f0 !important;
+  --color-muted: #cbd5e1 !important;
+  --border-light: #475569 !important;
+  --border-dark: #64748b !important;
+}
+
+/* Also target .dark-mode class for compatibility */
+.dark-mode, html.dark-mode, body.dark-mode {
+  --bg-main: #0f172a !important;
+  --bg-secondary: #1e293b !important;
+  --bg-tertiary: #334155 !important;
+  --card-bg: #1e293b !important;
+  --sidebar-bg: #0f172a !important;
+  --color-primary: #ffffff !important;
+  --color-secondary: #e2e8f0 !important;
+  --color-muted: #cbd5e1 !important;
+  --border-light: #475569 !important;
+  --border-dark: #64748b !important;
+}
+
+/* ==========================================
+   GLOBAL STYLESHEET SAFEGUARD FOR SUBJECT STREAM
+   ========================================== */
+
+/* 1. FORCE DARK SLATE BACKGROUND ON ALL CARDS & WIDGET CONTAINERS IN DARK MODE */
+.dark .bg-white,
+.dark .bg-slate-50,
+.dark .bg-slate-100,
+.dark [class*="card"],
+.dark [class*="Card"],
+.dark [class*="Upcoming"],
+.dark [class*="upcoming"],
+.dark [class*="Stream"],
+.dark [class*="modal"],
+.dark [class*="Modal"],
+.dark [role="dialog"] {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* 2. FORCE DEEP SLATE ON INNER TASK ITEMS & SUB-CARDS (UPCOMING TASKS) */
+.dark [class*="task"],
+.dark [class*="Task"],
+.dark [class*="task-item"],
+.dark [class*="taskCard"],
+.dark [class*="Upcoming"] div,
+.dark [class*="upcoming"] div,
+.dark [role="dialog"] div[class*="item"] {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+/* 3. FORCE CRISP HIGH-CONTRAST WHITE TEXT ON ALL CONTAINERS */
+.dark body,
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6,
+.dark p, .dark span, .dark label, .dark div,
+.dark [class*="Upcoming"] *,
+.dark [class*="task"] *,
+.dark [class*="modal"] * {
+  color: #ffffff !important;
+}
+
+/* 4. MUTED SECONDARY TEXT & DUE DATES (CRISP LIGHT GRAY) */
+.dark [class*="due"],
+.dark [class*="Due"],
+.dark .text-slate-500,
+.dark .text-slate-400,
+.dark .text-gray-500 {
+  color: #cbd5e1 !important;
+}
+
+/* 5. INPUT BOXES & COMMENT INPUTS IN DARK MODE */
+.dark input,
+.dark textarea,
+.dark [class*="comment"] {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* AI ASSISTANT CHAT BODY DARK MODE OVERRIDES                                  */
+/* -------------------------------------------------------------------------- */
+
+/* FORCE DARK BACKGROUND ON AI ASSISTANT CHAT BODY AND CONTAINERS */
+.dark [class*="AIAssistant"],
+.dark [class*="ai-assistant"],
+.dark [class*="Chatbot"],
+.dark [class*="chat-body"],
+.dark [class*="messages-container"] {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+/* FORCE DARK CONTAINER ON ALL DIRECT CHILDREN DIVS OF AI CHAT */
+.dark [class*="AIAssistant"] div[class*="content"],
+.dark [class*="AIAssistant"] div[class*="body"],
+.dark [class*="chat-messages"] {
+  background-color: #0f172a !important;
+}
+
+/* FORCE BRIGHT WHITE TEXT INSIDE AI CHAT BUBBLES */
+.dark [class*="AIAssistant"] *,
+.dark [class*="Chatbot"] * {
+  color: #ffffff !important;
+}
+
+.dark [class*="AIAssistant"] [class*="subtitle"],
+.dark [class*="AIAssistant"] .text-slate-400 {
+  color: #cbd5e1 !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* AGGRESSIVE DARK MODE OVERRIDE FOR ALL INNER CONTAINERS                      */
+/* -------------------------------------------------------------------------- */
+
+/* FORCE DARK BACKGROUND ON ALL DIVS IN DARK MODE */
+.dark div,
+.dark section,
+.dark article,
+.dark aside {
+  background-color: transparent !important;
+}
+
+.dark .bg-white,
+.dark .bg-slate-50,
+.dark .bg-slate-100,
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-gray-200 {
+  background-color: #1e293b !important;
+}
+
+/* FORCE DARK BACKGROUND ON ALL INNER CONTAINERS */
+.dark [class*="content"],
+.dark [class*="container"],
+.dark [class*="wrapper"],
+.dark [class*="inner"],
+.dark [class*="body"] {
+  background-color: #0f172a !important;
+}
+
+/* FORCE WHITE TEXT ON ALL ELEMENTS */
+.dark *,
+.dark *::before,
+.dark *::after {
+  color: #ffffff !important;
+}
+
+/* EXCEPTIONS FOR SPECIFIC MUTED TEXT */
+.dark .text-slate-400,
+.dark .text-slate-500,
+.dark .text-gray-400,
+.dark .text-gray-500,
+.dark .text-muted {
+  color: #cbd5e1 !important;
+}
+
+/* FORCE DARK BORDERS */
+.dark *,
+.dark *::before,
+.dark *::after {
+  border-color: #334155 !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* AI ASSISTANT NUCLEAR CSS OVERRIDE (DARK MODE ONLY)                          */
+/* -------------------------------------------------------------------------- */
+
+/* FORCE DARK BACKGROUND ON ALL AI ASSISTANT ELEMENTS IN DARK MODE */
+.dark div[class*="AIAssistant"],
+.dark div[class*="ChatbotModal"],
+.dark div[class*="ai-assistant"] {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+/* FORCE DARK CONTAINERS FOR INNER SECTIONS IN DARK MODE */
+.dark div[class*="AIAssistant"] div,
+.dark div[class*="ChatbotModal"] div {
+  background-color: #0f172a !important;
+}
+
+/* QUICK ACTIONS & INPUT CONTAINERS IN DARK MODE */
+.dark div[class*="AIAssistant"] [class*="quick-actions"],
+.dark div[class*="AIAssistant"] [class*="input-container"] {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* FORCE CRISP WHITE TEXT ON ALL AI CHAT MESSAGES & BUBBLES IN DARK MODE */
+.dark div[class*="AIAssistant"] p,
+.dark div[class*="AIAssistant"] span,
+.dark div[class*="AIAssistant"] div,
+.dark div[class*="ChatbotModal"] * {
+  color: #ffffff !important;
+}
+
+.dark div[class*="AIAssistant"] input {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+.dark div[class*="AIAssistant"] input::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* ==========================================================================
+   GLOBAL DARK MODE TEXT VISIBILITY OVERRIDE (STRICT WHITE TEXT)
+   ========================================================================== */
+
+/* 1. FORCE WHITE TEXT ON ALL CORE TEXT ELEMENTS IN DARK MODE */
+.dark,
+.dark *,
+html.dark,
+html.dark body {
+  color: #f8fafc !important; /* Slate-50 Ultra-Bright White */
+}
+
+/* 2. SPECIFIC OVERRIDES FOR HEADINGS & TYPOGRAPHY */
+.dark h1, 
+.dark h2, 
+.dark h3, 
+.dark h4, 
+.dark h5, 
+.dark h6,
+.dark p, 
+.dark span, 
+.dark a, 
+.dark li,
+.dark label,
+.dark td,
+.dark th {
+  color: #ffffff !important;
+}
+
+/* 3. MUTED & SUBTITLE TEXT OVERRIDE (SOFT LIGHT GRAY FOR HIERARCHY) */
+.dark .text-slate-400,
+.dark .text-slate-500,
+.dark .text-gray-400,
+.dark .text-gray-500,
+.dark .text-muted,
+.dark small {
+  color: #cbd5e1 !important; /* Slate-300 Light Gray */
+}
+
+/* 4. FORM INPUTS, TEXTAREAS, SELECTS & PLACEHOLDERS */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #1e293b !important; /* Slate-800 */
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8 !important; /* Slate-400 */
+}
+
+/* 5. CARDS, MODALS, DRAWERS, AND CONTAINERS */
+.dark .bg-white,
+.dark .bg-slate-50,
+.dark .bg-gray-50,
+.dark .bg-gray-100 {
+  background-color: #0f172a !important; /* Deep Slate-900 */
+  border-color: #1e293b !important;
+}
+
+/* 6. DROPDOWNS & POPUPS */
+.dark [role="menu"],
+.dark [role="dialog"],
+.dark .dropdown-content,
+.dark .modal-box {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   NUCLEAR UNIVERSAL WHITE TEXT OVERRIDE (ABSOLUTE STRICT)
+   ========================================================================== */
+
+/* FORCE ABSOLUTE WHITE TEXT ON EVERYTHING IN DARK MODE - NO EXCEPTIONS */
+.dark * {
+  color: #ffffff !important;
+}
+
+/* ONLY ALLOW MUTED TEXT FOR SPECIFIC CLASSES */
+.dark .text-slate-400,
+.dark .text-slate-500,
+.dark .text-gray-400,
+.dark .text-gray-500,
+.dark .text-muted {
+  color: #cbd5e1 !important;
+}
+
+/* FORCE WHITE ON ALL TEXT-RELATED ELEMENTS */
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6,
+.dark p, .dark span, .dark div, .dark a, .dark button, .dark label,
+.dark input, .dark textarea, .dark select, .dark li, .dark td, .dark th,
+.dark strong, .dark em, .dark b, .dark i, .dark u {
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   STRICT INVITE STUDENTS MODULE THEME ENFORCEMENT
+   ========================================================================== */
+
+/* DARK MODE - Invite Students Modal */
+.dark [class*="InviteStudent"],
+.dark [class*="invite-student"],
+.dark [id*="invite-modal"] {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+/* LIGHT MODE - Invite Students Modal */
+:not(.dark) [class*="InviteStudent"],
+:not(.dark) [class*="invite-student"],
+:not(.dark) [id*="invite-modal"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* INPUT FIELD OVERRIDES - DARK MODE */
+.dark [class*="InviteStudent"] input {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+/* INPUT FIELD OVERRIDES - LIGHT MODE */
+:not(.dark) [class*="InviteStudent"] input {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}

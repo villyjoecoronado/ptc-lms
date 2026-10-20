@@ -1,0 +1,938 @@
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const cors = require('cors');
+const mysql = require('mysql2');
+const bcrypt = require('bcrypt');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
+
+const db = mysql.createConnection({
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'lms_db'
+});
+
+db.connect((err) => {
+  if (err) {
+    console.log("❌ DB ERROR:", err.message);
+  } else {
+    console.log("✅ DATABASE CONNECTED!");
+    initializeDatabase();
+  }
+});
+
+// Initialize database schema with required fields
+function initializeDatabase() {
+  const createUsersTable = `
+    CREATE TABLE IF NOT EXISTS users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      password_hash VARCHAR(255) NOT NULL,
+      role ENUM('student', 'professor', 'dean', 'administrator') DEFAULT 'student',
+      email_verified BOOLEAN DEFAULT FALSE,
+      account_status ENUM('pending', 'active') DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_email (email)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `;
+  
+  const createVerificationCodesTable = `
+    CREATE TABLE IF NOT EXISTS verification_codes (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      email VARCHAR(255) NOT NULL,
+      code_hash VARCHAR(255) NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      attempts INT DEFAULT 0,
+      is_used BOOLEAN DEFAULT FALSE,
+      INDEX idx_user_id (user_id),
+      INDEX idx_email (email),
+      INDEX idx_expires_at (expires_at),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `;
+  
+  db.query(createUsersTable, (err) => {
+    if (err) {
+      console.log("❌ Error creating users table:", err.message);
+    } else {
+      console.log("✅ Users table verified/created");
+    }
+  });
+
+  db.query(createVerificationCodesTable, (err) => {
+    if (err) {
+      console.log("❌ Error creating verification_codes table:", err.message);
+    } else {
+      console.log("✅ Verification codes table verified/created");
+      seedDefaultUsers();
+    }
+  });
+}
+
+// Seed default test accounts
+async function seedDefaultUsers() {
+  const defaultUsers = [
+    {
+      email: 'student@paterostechnologicalcollege.edu.ph',
+      password: 'student',
+      role: 'student',
+      name: 'Student User'
+    },
+    {
+      email: 'prof@paterostechnologicalcollege.edu.ph',
+      password: 'prof',
+      role: 'professor',
+      name: 'Professor User'
+    },
+    {
+      email: 'dean@paterostechnologicalcollege.edu.ph',
+      password: 'dean',
+      role: 'dean',
+      name: 'Dean User'
+    },
+    {
+      email: 'admin@paterostechnologicalcollege.edu.ph',
+      password: 'admin',
+      role: 'administrator',
+      name: 'System Admin'
+    }
+  ];
+
+  for (const user of defaultUsers) {
+    const normalizedEmail = normalizeEmail(user.email);
+    
+    // Check if user already exists
+    const checkSql = 'SELECT id FROM users WHERE email = ?';
+    db.query(checkSql, [normalizedEmail], async (err, results) => {
+      if (err) {
+        console.log(`Error checking user ${user.email}:`, err.message);
+        return;
+      }
+      
+      if (results.length === 0) {
+        // Hash password and create user
+        const passwordHash = await bcrypt.hash(user.password, 10);
+        const insertSql = `
+          INSERT INTO users (email, password_hash, role, email_verified, account_status) 
+          VALUES (?, ?, ?, TRUE, 'active')
+        `;
+        
+        db.query(insertSql, [normalizedEmail, passwordHash, user.role], (err) => {
+          if (err) {
+            console.log(`Error seeding user ${user.email}:`, err.message);
+          } else {
+            console.log(`✅ Seeded default account: ${user.name} (${user.email})`);
+          }
+        });
+      } else {
+        console.log(`ℹ️  Default account already exists: ${user.email}`);
+      }
+    });
+  }
+}
+
+// Email normalization function
+function normalizeEmail(email) {
+  if (!email) return '';
+  return email.trim().toLowerCase();
+}
+
+// Map username shortcuts to full PTC email addresses
+function mapUsernameToEmail(username) {
+  const usernameMap = {
+    'student': 'student@paterostechnologicalcollege.edu.ph',
+    'prof': 'prof@paterostechnologicalcollege.edu.ph',
+    'dean': 'dean@paterostechnologicalcollege.edu.ph',
+    'admin': 'admin@paterostechnologicalcollege.edu.ph'
+  };
+  
+  const normalizedUsername = username.trim().toLowerCase();
+  return usernameMap[normalizedUsername] || null;
+}
+
+// PTC domain validation
+function isValidPTCEmail(email) {
+  const normalizedEmail = normalizeEmail(email);
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@paterostechnologicalcollege\.edu\.ph$/i;
+  return emailRegex.test(normalizedEmail);
+}
+
+// Password complexity validation
+function isValidPassword(password) {
+  if (!password || password.length < 8) {
+    return false;
+  }
+  
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  
+  return hasUppercase && hasLowercase && hasNumber && hasSpecial;
+}
+
+// Privileged role guard - reject admin/dean from public registration
+function isAllowedRole(role) {
+  const allowedRoles = ['student', 'professor'];
+  return allowedRoles.includes(role);
+}
+
+// Generate cryptographically secure 6-digit OTP code
+function generateOTP() {
+  return crypto.randomInt(100000, 999999).toString();
+}
+
+// Email transporter configuration
+const emailTransporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+  port: process.env.EMAIL_PORT || 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER || '',
+    pass: process.env.EMAIL_PASS || ''
+  }
+});
+
+// Send verification email with OTP
+async function sendVerificationEmail(email, otpCode) {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || 'PTC LMS <noreply@paterostechnologicalcollege.edu.ph>',
+    to: email,
+    subject: 'Verify Your PTC Email Address',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #0f172a;">Welcome to PTC LMS</h2>
+        <p style="color: #475569;">Thank you for registering with Pateros Technological College Learning Management System.</p>
+        <p style="color: #475569;">Your verification code is:</p>
+        <div style="background: #f1f5f9; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+          <span style="font-size: 32px; font-weight: bold; color: #0f172a; letter-spacing: 4px;">${otpCode}</span>
+        </div>
+        <p style="color: #475569;">This code will expire in 15 minutes.</p>
+        <p style="color: #64748b; font-size: 14px;">If you did not request this verification, please ignore this email.</p>
+      </div>
+    `
+  };
+
+  try {
+    await emailTransporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.log("Email sending error:", error.message);
+    return false;
+  }
+}
+
+// Purge expired verification codes
+function purgeExpiredCodes() {
+  const purgeSql = 'DELETE FROM verification_codes WHERE expires_at < NOW()';
+  db.query(purgeSql, (err) => {
+    if (err) {
+      console.log("Error purging expired codes:", err.message);
+    }
+  });
+}
+
+// Run purge every 5 minutes
+setInterval(purgeExpiredCodes, 5 * 60 * 1000);
+
+// Send verification code endpoint
+app.post('/api/send-verification', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ 
+        message: "Email is required." 
+      });
+    }
+    
+    const normalizedEmail = normalizeEmail(email);
+    
+    // Validate PTC domain
+    if (!isValidPTCEmail(normalizedEmail)) {
+      return res.status(400).json({ 
+        message: "Please use your official PTC email address ending with @paterostechnologicalcollege.edu.ph." 
+      });
+    }
+    
+    // Check if user exists
+    const userSql = 'SELECT id, email_verified FROM users WHERE email = ?';
+    db.query(userSql, [normalizedEmail], async (err, results) => {
+      if (err) {
+        console.log("Database error during verification send:", err.message);
+        return res.status(500).json({ 
+          message: "Something went wrong. Please try again." 
+        });
+      }
+      
+      if (results.length === 0) {
+        return res.status(404).json({ 
+          message: "No account found with this email address." 
+        });
+      }
+      
+      const user = results[0];
+      
+      // If already verified, redirect to login
+      if (user.email_verified) {
+        return res.status(400).json({ 
+          message: "This email is already verified. Please log in." 
+        });
+      }
+      
+      // Invalidate all previous codes for this user
+      const invalidateSql = 'UPDATE verification_codes SET is_used = TRUE WHERE user_id = ? AND is_used = FALSE';
+      db.query(invalidateSql, [user.id], (err) => {
+        if (err) {
+          console.log("Error invalidating old codes:", err.message);
+        }
+      });
+      
+      // Generate new OTP
+      const otpCode = generateOTP();
+      const codeHash = await bcrypt.hash(otpCode, 10);
+      
+      // Set expiration to 15 minutes from now
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+      
+      // Store verification code
+      const insertCodeSql = `
+        INSERT INTO verification_codes (user_id, email, code_hash, expires_at) 
+        VALUES (?, ?, ?, ?)
+      `;
+      
+      db.query(insertCodeSql, [user.id, normalizedEmail, codeHash, expiresAt], async (err) => {
+        if (err) {
+          console.log("Database error storing verification code:", err.message);
+          return res.status(500).json({ 
+            message: "Something went wrong. Please try again." 
+          });
+        }
+        
+        // Send email
+        const emailSent = await sendVerificationEmail(normalizedEmail, otpCode);
+        
+        if (!emailSent) {
+          return res.status(500).json({ 
+            message: "Failed to send verification email. Please try again." 
+          });
+        }
+        
+        res.json({ 
+          message: "Verification code sent successfully. Please check your email.",
+          userId: user.id
+        });
+      });
+    });
+    
+  } catch (error) {
+    console.log("Server error during verification send:", error.message);
+    res.status(500).json({ 
+      message: "Something went wrong. Please try again." 
+    });
+  }
+});
+
+// Verify email code endpoint
+app.post('/api/verify-email', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    
+    if (!email || !code) {
+      return res.status(400).json({ 
+        message: "Email and verification code are required." 
+      });
+    }
+    
+    const normalizedEmail = normalizeEmail(email);
+    
+    // Validate code format (6 digits)
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({ 
+        message: "Invalid verification code format." 
+      });
+    }
+    
+    // Get user and active verification code
+    const sql = `
+      SELECT u.id, u.email_verified, u.account_status, vc.id as code_id, vc.code_hash, 
+             vc.expires_at, vc.attempts, vc.is_used
+      FROM users u
+      LEFT JOIN verification_codes vc ON u.id = vc.user_id AND vc.is_used = FALSE
+      WHERE u.email = ?
+      ORDER BY vc.created_at DESC
+      LIMIT 1
+    `;
+    
+    db.query(sql, [normalizedEmail], async (err, results) => {
+      if (err) {
+        console.log("Database error during verification:", err.message);
+        return res.status(500).json({ 
+          message: "Something went wrong. Please try again." 
+        });
+      }
+      
+      if (results.length === 0) {
+        return res.status(404).json({ 
+          message: "No account found with this email address." 
+        });
+      }
+      
+      const user = results[0];
+      
+      // If already verified
+      if (user.email_verified) {
+        return res.status(400).json({ 
+          message: "This email is already verified. Please log in." 
+        });
+      }
+      
+      // Check if verification code exists
+      if (!user.code_id) {
+        return res.status(400).json({ 
+          message: "No active verification code found. Please request a new code." 
+        });
+      }
+      
+      // Check if code is already used
+      if (user.is_used) {
+        return res.status(400).json({ 
+          message: "This verification code has already been used. Please request a new code." 
+        });
+      }
+      
+      // Check if code is expired
+      if (new Date(user.expires_at) < new Date()) {
+        return res.status(400).json({ 
+          message: "Verification code has expired. Please request a new code." 
+        });
+      }
+      
+      // Check attempt limit (max 5 attempts)
+      if (user.attempts >= 5) {
+        return res.status(429).json({ 
+          message: "Maximum verification attempts exceeded. Please request a new code." 
+        });
+      }
+      
+      // Verify code hash
+      const isCodeValid = await bcrypt.compare(code, user.code_hash);
+      
+      if (!isCodeValid) {
+        // Increment attempt count
+        const incrementSql = 'UPDATE verification_codes SET attempts = attempts + 1 WHERE id = ?';
+        db.query(incrementSql, [user.code_id]);
+        
+        const remainingAttempts = 5 - (user.attempts + 1);
+        return res.status(400).json({ 
+          message: `Invalid verification code. ${remainingAttempts} attempts remaining.` 
+        });
+      }
+      
+      // Mark code as used
+      const markUsedSql = 'UPDATE verification_codes SET is_used = TRUE WHERE id = ?';
+      db.query(markUsedSql, [user.code_id]);
+      
+      // Update user as verified and active
+      const updateUserSql = `
+        UPDATE users 
+        SET email_verified = TRUE, account_status = 'active' 
+        WHERE id = ?
+      `;
+      
+      db.query(updateUserSql, [user.id], (err) => {
+        if (err) {
+          console.log("Database error updating user status:", err.message);
+          return res.status(500).json({ 
+            message: "Something went wrong. Please try again." 
+          });
+        }
+        
+        res.json({ 
+          message: "Email verified successfully! Please log in.",
+          success: true
+        });
+      });
+    });
+    
+  } catch (error) {
+    console.log("Server error during verification:", error.message);
+    res.status(500).json({ 
+      message: "Something went wrong. Please try again." 
+    });
+  }
+});
+
+// Registration endpoint with full security
+app.post('/api/register', async (req, res) => {
+  try {
+    const { name, email, password, confirmPassword, role } = req.body;
+    
+    // Validate required fields
+    if (!email || !password || !confirmPassword) {
+      return res.status(400).json({ 
+        message: "Email, password, and confirm password are required." 
+      });
+    }
+    
+    // Normalize email
+    const normalizedEmail = normalizeEmail(email);
+    
+    // Validate PTC domain
+    if (!isValidPTCEmail(normalizedEmail)) {
+      return res.status(400).json({ 
+        message: "Please use your official PTC email address ending with @paterostechnologicalcollege.edu.ph." 
+      });
+    }
+    
+    // Validate password complexity
+    if (!isValidPassword(password)) {
+      return res.status(400).json({ 
+        message: "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character." 
+      });
+    }
+    
+    // Validate password match
+    if (password !== confirmPassword) {
+      return res.status(400).json({ 
+        message: "Passwords do not match." 
+      });
+    }
+    
+    // Privileged role guard - force student role for public registration
+    const userRole = isAllowedRole(role) ? role : 'student';
+    
+    // Check for duplicate email
+    const checkDuplicateSql = 'SELECT id FROM users WHERE email = ?';
+    db.query(checkDuplicateSql, [normalizedEmail], async (err, results) => {
+      if (err) {
+        console.log("Database error during duplicate check:", err.message);
+        return res.status(500).json({ 
+          message: "Something went wrong while creating your account. Please try again." 
+        });
+      }
+      
+      if (results.length > 0) {
+        return res.status(409).json({ 
+          message: "This PTC email is already registered. Please log in or use Forgot Password if you cannot access your account." 
+        });
+      }
+      
+      // Hash password securely
+      const saltRounds = 10;
+      const passwordHash = await bcrypt.hash(password, saltRounds);
+      
+      // Insert user into database
+      const insertSql = `
+        INSERT INTO users (email, password_hash, role, email_verified, account_status) 
+        VALUES (?, ?, ?, FALSE, 'pending')
+      `;
+      
+      db.query(insertSql, [normalizedEmail, passwordHash, userRole], async (err, result) => {
+        if (err) {
+          console.log("Database error during user creation:", err.message);
+          return res.status(500).json({ 
+            message: "Something went wrong while creating your account. Please try again." 
+          });
+        }
+        
+        const userId = result.insertId;
+        
+        // Generate and send verification email automatically
+        const otpCode = generateOTP();
+        const codeHash = await bcrypt.hash(otpCode, 10);
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+        
+        const insertCodeSql = `
+          INSERT INTO verification_codes (user_id, email, code_hash, expires_at) 
+          VALUES (?, ?, ?, ?)
+        `;
+        
+        db.query(insertCodeSql, [userId, normalizedEmail, codeHash, expiresAt], async (codeErr) => {
+          if (codeErr) {
+            console.log("Database error storing verification code:", codeErr.message);
+          }
+          
+          // Send email (non-blocking - don't fail registration if email fails)
+          const emailSent = await sendVerificationEmail(normalizedEmail, otpCode);
+          
+          if (!emailSent) {
+            console.log("Failed to send verification email after registration");
+          }
+        });
+        
+        res.status(201).json({ 
+          message: "Account created successfully. Please verify your email to activate your account.",
+          userId: userId,
+    });
+      return res.status(400).json({ 
+        message: "Email and password are required." 
+      });
+    }
+    
+    // Map username shortcuts to full email addresses
+    const mappedEmail = mapUsernameToEmail(email);
+    const normalizedEmail = normalizeEmail(mappedEmail || email);
+    
+    const sql = 'SELECT * FROM users WHERE email = ?';
+    db.query(sql, [normalizedEmail], async (err, results) => {
+      if (err) {
+        console.log("Database error during login:", err.message);
+        return res.status(500).json({ 
+          message: "Something went wrong. Please try again." 
+        });
+      }
+      
+      if (results.length === 0) {
+        return res.status(401).json({ 
+          message: "Invalid email or password." 
+        });
+      }
+      
+      const user = results[0];
+      
+      // Verify password hash
+      const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+      
+      if (!isPasswordValid) {
+        return res.status(401).json({ 
+          message: "Invalid email or password." 
+        });
+      }
+      
+      // Check account status
+      if (user.account_status !== 'active') {
+        return res.status(403).json({ 
+          message: "Your account is not active. Please verify your email or contact support." 
+        });
+      }
+      
+      // Return user data without password hash
+      const { password_hash, ...userWithoutPassword } = user;
+      res.json({ user: userWithoutPassword });
+    });
+    
+  } catch (error) {
+    console.log("Server error during login:", error.message);
+    res.status(500).json({ 
+      message: "Something went wrong. Please try again." 
+    });
+  }
+});
+
+// ... rest of the code remains the same ...
+    SELECT id, email, role, email_verified, account_status, created_at, updated_at
+    FROM users
+    ORDER BY created_at DESC
+  `;
+  
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.log("Database error fetching users:", err.message);
+      return res.status(500).json({ 
+        message: "Something went wrong. Please try again." 
+      });
+    }
+    
+    res.json({ users: results });
+  });
+});
+
+// Admin: Update user role/details (admin-only)
+app.put('/api/admin/users/:id', (req, res) => {
+  const { id } = req.params;
+  const { role, email_verified, account_status } = req.body;
+  
+  if (!role) {
+    return res.status(400).json({ 
+      message: "Role is required." 
+    });
+  }
+  
+  const validRoles = ['student', 'professor', 'dean', 'administrator'];
+  if (!validRoles.includes(role)) {
+    return res.status(400).json({ 
+      message: "Invalid role." 
+    });
+  }
+  
+  const updateSql = `
+    UPDATE users 
+    SET role = ?, 
+        email_verified = COALESCE(?, email_verified),
+        account_status = COALESCE(?, account_status),
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `;
+  
+  db.query(updateSql, [role, email_verified, account_status, id], (err, result) => {
+    if (err) {
+      console.log("Database error updating user:", err.message);
+      return res.status(500).json({ 
+        message: "Something went wrong. Please try again." 
+      });
+    }
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ 
+        message: "User not found." 
+      });
+    }
+    
+    res.json({ 
+      message: "User updated successfully.",
+      auditNote: "Role modified by Administrator"
+    });
+  });
+});
+
+// Forgot Password - Send Reset OTP
+app.post('/api/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ 
+        message: "Email is required." 
+      });
+    }
+    
+    const normalizedEmail = normalizeEmail(email);
+    
+    // Validate PTC domain
+    if (!isValidPTCEmail(normalizedEmail)) {
+      return res.status(400).json({ 
+        message: "Please use your official PTC email address ending with @paterostechnologicalcollege.edu.ph." 
+      });
+    }
+    
+    // Check if user exists
+    const userSql = 'SELECT id, email FROM users WHERE email = ?';
+    db.query(userSql, [normalizedEmail], async (err, results) => {
+      if (err) {
+        console.log("Database error during forgot password:", err.message);
+        return res.status(500).json({ 
+          message: "Something went wrong. Please try again." 
+        });
+      }
+      
+      if (results.length === 0) {
+        return res.status(404).json({ 
+          message: "No account found with this PTC email address."
+        });
+      }
+      
+      const user = results[0];
+      
+      // Invalidate all previous reset codes for this user
+      const invalidateSql = 'UPDATE verification_codes SET is_used = TRUE WHERE user_id = ? AND is_used = FALSE';
+      db.query(invalidateSql, [user.id], (err) => {
+        if (err) {
+          console.log("Error invalidating old reset codes:", err.message);
+        }
+      });
+      
+      // Generate new OTP for password reset
+      const otpCode = generateOTP();
+      const codeHash = await bcrypt.hash(otpCode, 10);
+      
+      // Set expiration to 10 minutes from now
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      
+      // Store reset code
+      const insertCodeSql = `
+        INSERT INTO verification_codes (user_id, email, code_hash, expires_at) 
+        VALUES (?, ?, ?, ?)
+      `;
+      
+      db.query(insertCodeSql, [user.id, normalizedEmail, codeHash, expiresAt], async (err) => {
+        if (err) {
+          console.log("Database error storing reset code:", err.message);
+          return res.status(500).json({ 
+            message: "Something went wrong. Please try again." 
+          });
+        }
+        
+        // Send email with reset code
+        const mailOptions = {
+          from: process.env.EMAIL_FROM || 'PTC LMS <noreply@paterostechnologicalcollege.edu.ph>',
+          to: normalizedEmail,
+          subject: 'Pateros Technological College LMS - Password Reset Request',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #0f172a;">Pateros Technological College LMS - Password Reset Request</h2>
+              <p style="color: #475569;">You requested to reset your PTC LMS account password. Use the verification code below to authorize your password reset:</p>
+              <div style="background: #f1f5f9; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+                <span style="font-size: 32px; font-weight: bold; color: #0f172a; letter-spacing: 4px;">${otpCode}</span>
+              </div>
+              <p style="color: #475569;">This code is valid for 10 minutes. If you did not request this code, please ignore this email or contact the PTC LMS Administrator.</p>
+            </div>
+          `
+        };
+        
+        try {
+          await emailTransporter.sendMail(mailOptions);
+          res.json({ 
+            message: "If an account exists with this email, a password reset code has been sent."
+          });
+        } catch (error) {
+          console.log("SMTP Error - Raw server error:", error);
+          res.status(500).json({ 
+            message: "Failed to send reset code. Please check your email address or connection." 
+          });
+        }
+      });
+    });
+    
+  } catch (error) {
+    console.log("Server error during forgot password:", error.message);
+    res.status(500).json({ 
+      message: "Something went wrong. Please try again." 
+    });
+  }
+});
+
+// Reset Password - Verify OTP and Update Password
+app.post('/api/reset-password', async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ 
+        message: "Email, verification code, and new password are required." 
+      });
+    }
+    
+    const normalizedEmail = normalizeEmail(email);
+    
+    // Validate code format (6 digits)
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({ 
+        message: "Invalid verification code format." 
+      });
+    }
+    
+    // Validate password complexity
+    if (!isValidPassword(newPassword)) {
+      return res.status(400).json({ 
+        message: "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character." 
+      });
+    }
+    
+    // Get user and active reset code
+    const sql = `
+      SELECT u.id, u.email, vc.id as code_id, vc.code_hash, 
+             vc.expires_at, vc.attempts, vc.is_used
+      FROM users u
+      LEFT JOIN verification_codes vc ON u.id = vc.user_id AND vc.is_used = FALSE
+      WHERE u.email = ?
+      ORDER BY vc.created_at DESC
+      LIMIT 1
+    `;
+    
+    db.query(sql, [normalizedEmail], async (err, results) => {
+      if (err) {
+        console.log("Database error during password reset:", err.message);
+        return res.status(500).json({ 
+          message: "Something went wrong. Please try again." 
+        });
+      }
+      
+      if (results.length === 0) {
+        return res.status(404).json({ 
+          message: "No account found with this email address." 
+        });
+      }
+      
+      const user = results[0];
+      
+      // Check if reset code exists
+      if (!user.code_id) {
+        return res.status(400).json({ 
+          message: "No active reset code found. Please request a new code." 
+        });
+      }
+      
+      // Check if code is already used
+      if (user.is_used) {
+        return res.status(400).json({ 
+          message: "This reset code has already been used. Please request a new code." 
+        });
+      }
+      
+      // Check if code is expired
+      if (new Date(user.expires_at) < new Date()) {
+        return res.status(400).json({ 
+          message: "Reset code has expired. Please request a new code." 
+        });
+      }
+      
+      // Check attempt limit (max 5 attempts)
+      if (user.attempts >= 5) {
+        return res.status(429).json({ 
+          message: "Maximum reset attempts exceeded. Please request a new code." 
+        });
+      }
+      
+      // Verify code hash
+      const isCodeValid = await bcrypt.compare(code, user.code_hash);
+      
+      if (!isCodeValid) {
+        // Increment attempt count
+        const incrementSql = 'UPDATE verification_codes SET attempts = attempts + 1 WHERE id = ?';
+        db.query(incrementSql, [user.code_id]);
+        
+        const remainingAttempts = 5 - (user.attempts + 1);
+        return res.status(400).json({ 
+          message: `Invalid verification code. ${remainingAttempts} attempts remaining.` 
+        });
+      }
+      
+      // Mark code as used
+      const markUsedSql = 'UPDATE verification_codes SET is_used = TRUE WHERE id = ?';
+      db.query(markUsedSql, [user.code_id]);
+      
+      // Hash new password
+      const saltRounds = 10;
+      const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+      
+      // Update password in database
+      const updatePasswordSql = 'UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
+      
+      db.query(updatePasswordSql, [passwordHash, user.id], (err) => {
+        if (err) {
+          console.log("Database error updating password:", err.message);
+          return res.status(500).json({ 
+            message: "Something went wrong. Please try again." 
+          });
+        }
+        
+        res.json({ 
+          message: "Password updated successfully. Please log in with your new password.",
+          success: true
+        });
+      });
+    });
+    
+  } catch (error) {
+    console.log("Server error during password reset:", error.message);
+    res.status(500).json({ 
+      message: "Something went wrong. Please try again." 
+    });
+  }
+});
+
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
